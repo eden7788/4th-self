@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4차 자가 유지보수 가이드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+:root {
+  --blue:#1E3FFA;--blue-dark:#1530d0;--blue-light:#e8ecff;
+  --text:#111827;--text-sub:#6b7280;--text-hint:#9ca3af;
+  --bg:#f3f4f6;--bg-card:#ffffff;--border:#e5e7eb;
+  --success:#16a34a;--success-bg:#f0fdf4;--success-border:#bbf7d0;
+  --warn-bg:#fffbeb;--warn-border:#fcd34d;--warn-text:#92400e;
+  --danger-bg:#fff1f2;--danger-border:#fecdd3;--danger-text:#be123c;
+  --radius:16px;--radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:1.5rem 1rem 4rem}
+.wrap{max-width:480px;margin:0 auto}
+.header{background:var(--blue);border-radius:var(--radius);padding:1.75rem 1.5rem;margin-bottom:1.25rem;text-align:center;color:white}
+.header-logo{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.65;margin-bottom:8px}
+.header h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.header p{font-size:13px;opacity:.8;line-height:1.65}
+.pbar-wrap{margin-bottom:1.25rem;display:none}
+.pbar-wrap.visible{display:block}
+.pbar-track{display:flex;align-items:center}
+.pb-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:white;border:2px solid var(--border);color:var(--text-hint);flex-shrink:0;transition:all .25s}
+.pb-dot.active{background:var(--blue);border-color:var(--blue);color:white}
+.pb-dot.done{background:var(--success-bg);border-color:var(--success-border);color:var(--success)}
+.pb-line{height:2px;flex:1;background:var(--border);transition:background .25s}
+.pb-line.done{background:var(--success-border)}
+.pbar-label{font-size:12px;color:var(--text-sub);margin-top:8px;text-align:center}
+.pbar-label strong{color:var(--blue)}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;animation:fadeUp .22s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card-body{padding:1.375rem 1.5rem}
+.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--text-sub);line-height:1.65;margin-bottom:1rem}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+.chip{padding:9px 18px;border-radius:100px;border:1.5px solid var(--border);background:white;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.sel{background:var(--blue);border-color:var(--blue);color:white}
+.btn-row{display:flex;gap:8px}
+.btn{padding:12px 20px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:white;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:white;flex:1}
+.btn.primary:hover{background:var(--blue-dark)}
+.btn.full{flex:1}
+.cklist{list-style:none;margin-bottom:1rem}
+.cklist li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;cursor:pointer;user-select:none;transition:color .15s}
+.cklist li:last-child{border-bottom:none}
+.cklist li.checked{color:var(--text-hint);text-decoration:line-through}
+.ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:13px;color:transparent}
+.ck.on{background:var(--blue);border-color:var(--blue);color:white}
+.step-badge{display:inline-block;font-size:11px;font-weight:700;color:var(--blue);background:var(--blue-light);padding:3px 11px;border-radius:100px;margin-bottom:10px}
+.step-title{font-size:17px;font-weight:700;color:var(--text);line-height:1.5;margin-bottom:8px}
+.step-note{font-size:13px;color:var(--text-sub);line-height:1.65;background:var(--bg);border-left:3px solid var(--border);padding:9px 13px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:6px}
+.tag-opt{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:#f3f4f6;color:var(--text-sub);margin-left:6px;vertical-align:middle}
+.tag-req{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:#fff3cd;color:#856404;margin-left:6px;vertical-align:middle}
+.step-img{width:100%;background:#f3f4f6;border-top:1px solid var(--border);border-bottom:1px solid var(--border);min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.step-img img{width:100%;max-height:none;object-fit:contain;display:block;background:#f3f4f6}
+.img-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;padding:2.5rem 1.5rem;color:var(--text-hint);font-size:13px;text-align:center}
+.confirm-area{padding:1.25rem 1.5rem;background:var(--bg);border-top:1px solid var(--border)}
+.confirm-q{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
+.confirm-btns{display:flex;gap:8px}
+.cbtn{flex:1;padding:13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:white;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;text-align:center}
+.cbtn:hover{background:#f9fafb}
+.cbtn.yes{background:var(--blue);border-color:var(--blue);color:white}
+.cbtn.yes:hover{background:var(--blue-dark)}
+.help-panel{margin:0 1.5rem 1.25rem;padding:13px 16px;border-radius:var(--radius-sm);background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);font-size:13px;line-height:1.7;display:none}
+.help-panel.visible{display:block}
+.help-panel a{color:var(--warn-text);font-weight:700;text-decoration:none}
+/* 주의사항 카드 */
+.warn-card{border:2px solid #f59e0b;border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;animation:fadeUp .22s ease}
+.warn-card-head{background:#f59e0b;padding:12px 16px;font-size:14px;font-weight:700;color:white}
+.warn-card-body{background:var(--bg-card);padding:1.25rem 1.5rem}
+.warn-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);line-height:1.7}
+.warn-item:last-child{border-bottom:none}
+.warn-item-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.warn-item-icon{font-size:15px;flex-shrink:0}
+.warn-item-title{font-size:13px;font-weight:700;color:var(--text)}
+.warn-item-desc{font-size:13px;color:var(--text-sub);line-height:1.65;padding-left:21px}
+.warn-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px;background:#fee2e2;color:#dc2626;margin-left:4px;vertical-align:middle;white-space:nowrap}
+/* 실리콘 위험 경고 */
+.danger-note{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;color:var(--danger-text);line-height:1.65;margin-top:8px}
+.warn-note{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;color:var(--warn-text);line-height:1.65;margin-top:8px}
+.back-row{margin-bottom:.75rem}
+.back-btn{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--text-sub);background:none;border:none;cursor:pointer;font-family:inherit;padding:6px 2px}
+.back-btn:hover{color:var(--text)}
+.test-list{margin-bottom:1rem}
+.test-item{display:flex;align-items:center;gap:12px;padding:14px 15px;border-radius:var(--radius-sm);border:1.5px solid var(--border);margin-bottom:8px;font-size:14px;cursor:pointer;user-select:none;background:white;transition:all .15s}
+.test-item.on{background:var(--success-bg);border-color:var(--success-border);color:var(--success)}
+.notice{padding:13px 16px;border-radius:var(--radius-sm);background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);font-size:13px;line-height:1.7;margin-top:.75rem;display:none}
+.notice.visible{display:block}
+.notice a{color:var(--warn-text);font-weight:700;text-decoration:none}
+.done-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:3rem 1.5rem;text-align:center;animation:fadeUp .3s ease}
+.done-icon{width:72px;height:72px;border-radius:50%;background:var(--success-bg);border:2px solid var(--success-border);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:36px}
+.done-card h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.done-card p{font-size:13px;color:var(--text-sub);line-height:1.7;margin-bottom:1.75rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-logo">설치 가이드</div>
+    <h1>자가 유지보수 가이드</h1>
+    <p>단계를 따라 진행해주시면<br>손쉽게 설치를 완료하실 수 있습니다.</p>
+  </div>
+  <div class="pbar-wrap" id="pbarWrap">
+    <div class="pbar-track" id="pbarTrack"></div>
+    <div class="pbar-label" id="pbarLabel"></div>
+  </div>
+  <div id="root"></div>
+</div>
+<script>
+var BASE="https://raw.githubusercontent.com/eden7788/-/main/4%EC%B0%A8/";
+var IMAGES={
+  "hub_안테나체결":  "YOUR_IMAGE_URL",
+  "hub_어댑터연결":  "YOUR_IMAGE_URL",
+  "hub_어댑터교체":  "YOUR_IMAGE_URL",
+  "hub_LED확인":     "YOUR_IMAGE_URL",
+  "hub_기기상태확인": "YOUR_IMAGE_URL",
+  "hub_앱확인":      "YOUR_IMAGE_URL",
+  "hub_원복":        "YOUR_IMAGE_URL",
+  "sensor_본체결합": "YOUR_IMAGE_URL",
+  "sensor_3M부착":   "YOUR_IMAGE_URL",
+  "sensor_3M제거":   "YOUR_IMAGE_URL",
+  "sensor_설치":     "YOUR_IMAGE_URL",
+  "sensor_벽면청소": "YOUR_IMAGE_URL",
+  "sensor_실리콘":   "YOUR_IMAGE_URL",
+  "sensor_부착완료": "YOUR_IMAGE_URL",
+  "recv_삼성_천장형4way":"YOUR_IMAGE_URL","recv_삼성_천장형2way":"YOUR_IMAGE_URL","recv_삼성_천장형1way":"YOUR_IMAGE_URL",
+  "recv_삼성_벽걸이에어컨":"YOUR_IMAGE_URL","recv_삼성_스탠드에어컨":"YOUR_IMAGE_URL","recv_삼성_360에어컨":"YOUR_IMAGE_URL",
+  "recv_LG_천장형4way":"YOUR_IMAGE_URL","recv_LG_천장형2way":"YOUR_IMAGE_URL","recv_LG_천장형1way":"YOUR_IMAGE_URL",
+  "recv_LG_벽걸이에어컨":"YOUR_IMAGE_URL","recv_LG_스탠드에어컨":"YOUR_IMAGE_URL","recv_LG_360에어컨":"YOUR_IMAGE_URL",
+  "recv_캐리어_천장형4way":"YOUR_IMAGE_URL","recv_캐리어_천장형2way":"YOUR_IMAGE_URL","recv_캐리어_천장형1way":"YOUR_IMAGE_URL",
+  "recv_캐리어_벽걸이에어컨":"YOUR_IMAGE_URL","recv_캐리어_스탠드에어컨":"YOUR_IMAGE_URL",
+  "ctrl_바텀결합":   "YOUR_IMAGE_URL",
+  "ctrl_바텀3M":     "YOUR_IMAGE_URL",
+  "ctrl_실리콘":     "YOUR_IMAGE_URL",
+  "ctrl_크래들3M":   "YOUR_IMAGE_URL",
+  "ctrl_크래들결합": "YOUR_IMAGE_URL",
+  
+  "ctrl_IR방향":     "YOUR_IMAGE_URL",
+  "ctrl_사전테스트": "YOUR_IMAGE_URL",
+  "ctrl_부착완료":   "YOUR_IMAGE_URL",
+};
+
+var TEL="02-6052-1505";
+var MAKER_TYPES={
+  "삼성":  ["천장형 4way","천장형 2way","천장형 1way","벽걸이 에어컨","스탠드 에어컨","360 에어컨"],
+  "LG":    ["천장형 4way","천장형 2way","천장형 1way","벽걸이 에어컨","스탠드 에어컨","360 에어컨"],
+  "캐리어":["천장형 4way","천장형 2way","천장형 1way","벽걸이 에어컨","스탠드 에어컨"],
+};
+
+function isTypeA(maker,type){
+  if(type==="벽걸이 에어컨"||type==="스탠드 에어컨") return true;
+  if(type==="360 에어컨"&&maker==="LG") return true;
+  return false;
+}
+
+/* ── 허브 플로우 ── */
+var FLOWS_HUB_ADAPTER=[
+  {type:"step",badge:"1단계",title:"수령한 어댑터를 허브와 연결한 뒤 콘센트에 전원을 연결해주세요.",note:"기기 재부팅까지 최대 1분이 소요됩니다.",img:"hub_어댑터연결",confirm:"전원을 연결하셨나요?"},
+  {type:"step",badge:"2단계",title:"허브 LED 색을 확인해주세요.",note:"백색 표시등이 들어오면 정상 연결 상태입니다.",img:"hub_LED확인",confirm:"백색 LED가 켜졌나요?"},
+  {type:"step",badge:"3단계",title:"앱에서 기기 연결 상태를 확인해주세요.\n정상으로 보이면 복구 완료입니다.",img:"hub_기기상태확인",confirm:"앱에서 연결이 확인되었나요?"},
+  {type:"done"}
+];
+var FLOWS_HUB_ANTENNA=[
+  {type:"step",badge:"1단계",title:"시계 방향으로 돌려서 안테나를 체결해주세요.",img:"hub_안테나체결",confirm:"안테나를 체결하셨나요?"},
+  {type:"step",badge:"2단계",title:"콘센트에 어댑터를 연결 후 허브를 체결해주세요.",note:"기기 재부팅까지 최대 1분이 소요됩니다.",img:"hub_어댑터연결",confirm:"전원을 연결하셨나요?"},
+  {type:"step",badge:"3단계",title:"허브 LED 색을 확인해주세요.",note:"백색 표시등이 들어오면 정상 연결 상태입니다.",img:"hub_LED확인",confirm:"백색 LED가 켜졌나요?"},
+  {type:"step",badge:"4단계",title:"앱에서 기기 연결 상태를 확인해주세요.\n정상으로 보이면 복구 완료입니다.",img:"hub_기기상태확인",confirm:"앱에서 연결이 확인되었나요?"},
+  {type:"done"}
+];
+var FLOWS_HUB_BOTH=[
+  {type:"step",badge:"1단계",title:"시계 방향으로 돌려서 안테나를 체결해주세요.",img:"hub_안테나체결",confirm:"안테나를 체결하셨나요?"},
+  {type:"step",badge:"2단계",title:"수령한 어댑터를 허브와 연결한 뒤 콘센트에 전원을 연결해주세요.",note:"기기 재부팅까지 최대 1분이 소요됩니다.",img:"hub_어댑터연결",confirm:"전원을 연결하셨나요?"},
+  {type:"step",badge:"3단계",title:"허브 LED 색을 확인해주세요.",note:"백색 표시등이 들어오면 정상 연결 상태입니다.",img:"hub_LED확인",confirm:"백색 LED가 켜졌나요?"},
+  {type:"step",badge:"4단계",title:"앱에서 기기 연결 상태를 확인해주세요.\n정상으로 보이면 복구 완료입니다.",img:"hub_기기상태확인",confirm:"앱에서 연결이 확인되었나요?"},
+  {type:"done"}
+];
+
+/* ── 센서 플로우 ── */
+var FLOWS_SENSOR=[
+  {type:"checklist",title:"자재를 확인해주세요",items:["바텀","3M 테이프","실리콘"]},
+  {type:"step",badge:"1단계",title:"바텀 테두리를 따라 3M 테이프를 붙여주세요.",img:"sensor_3M부착",confirm:"3M 테이프를 붙이셨나요?"},
+  {type:"step",badge:"2단계",title:"바텀의 틈을 알맞게 끼워서 본체와 결합해주세요.",img:"sensor_본체결합",confirm:"본체와 결합하셨나요?"},
+  {type:"step",badge:"3단계",title:"3M 테이프의 보호 필름을 떼어줍니다.",note:"벽면이 울퉁불퉁할 경우 중앙에 실리콘을 적정량 도포합니다.",img:"sensor_3M제거",confirm:"보호 필름을 제거하셨나요?"},
+  {type:"step",badge:"4단계",title:"벽면의 기존 바텀을 제거한 후, 기기 로고가 정방향이 되도록 부착합니다.",warn:"⚠️ 에어컨과 기기가 1:1로 연결되어 있으므로 최초 설치 사진과 동일한 자리에 부착해야 합니다. 기존 바텀 제거가 불가능할 경우 기존 위치 바로 옆에 붙여주세요.",img:"sensor_설치",confirm:"부착을 완료하셨나요?"},
+  {type:"done"}
+];
+
+/* ── 컨트롤러 플로우 빌더 ── */
+function buildCtrlFlow(maker,type){
+  var recvKey="recv_"+maker+"_"+type.replace(/ /g,"");
+  var steps=[
+    {type:"step",badge:"1단계",title:"바텀 테두리를 따라 3M 테이프를 붙여주세요.",img:"ctrl_바텀3M",confirm:"3M 테이프를 붙이셨나요?"},
+    {type:"step",badge:"2단계",title:"바텀의 틈을 알맞게 끼워서 본체와 결합해주세요.",img:"ctrl_바텀결합",confirm:"바텀을 결합하셨나요?"},
+    {type:"step",badge:"3단계",title:"실제 부착 전, 설치할 위치에 기기를 대고 앱에서 정상 제어 여부를 먼저 테스트합니다.",warn2:"⏱️ 앱에서 제어 명령을 보낸 후, 실제 에어컨이 작동하기까지 약 30초가량 소요될 수 있습니다. 바로 반응이 없더라도 잠시만 기다려 주세요.",warn:"⚠️ 동봉된 최초 설치 사진을 참고하여 방향을 동일하게 맞춰주세요. 단, 부착 위치는 기존 흔적을 피해야 합니다. 기존 자리에 그대로 붙이면 접착력이 약해져 기기가 떨어질 위험이 있습니다.",confirm:"제어가 정상 작동하나요?"},
+    {type:"warn_attach",silicone:"ctrl_실리콘"},
+    {type:"test_final"},
+    {type:"done"}
+  ];
+  return [
+    {type:"checklist",title:"자재를 확인해주세요",items:["바텀","3M 테이프","실리콘","크래들 (천장형·360 에어컨 해당)"]},
+    {type:"select_maker"},
+    {type:"select_type"},
+  ].concat(steps);
+}
+
+/* ── 상태 ── */
+var S={device:"",maker:"",type:"",hubMat:"",flow:[],idx:0};
+
+/* ── 렌더 ── */
+function render(){
+  var root=document.getElementById("root");
+  root.innerHTML="";
+  if(!S.device){renderStart(root);updatePbar([],-1);return;}
+  if(S.device==="hub"&&!S.flow.length){renderHubMatSelect(root);updatePbar([],-1);return;}
+  if(S.device==="ctrl"&&!S.flow.length){renderCtrlMat(root);updatePbar([],-1);return;}
+  var flow=S.flow;
+  var step=flow[S.idx];
+  if(!step)return;
+  var vis=flow.filter(function(f){return f.type!=="select_maker"&&f.type!=="select_type";});
+  var cur=flow.slice(0,S.idx+1).filter(function(f){return f.type!=="select_maker"&&f.type!=="select_type";}).length-1;
+  updatePbar(vis,cur);
+  if(step.type==="checklist")renderChecklist(root,step);
+  else if(step.type==="select_maker_type")renderSelectMakerType(root);
+  else if(step.type==="select_maker")renderSelectMaker(root);
+  else if(step.type==="select_type")renderSelectType(root);
+  else if(step.type==="step")renderStep(root,step);
+  else if(step.type==="warn_attach")renderWarnAttach(root,step);
+  else if(step.type==="test_final")renderTestFinal(root);
+  else if(step.type==="done")renderDone(root);
+}
+
+function updatePbar(vis,cur){
+  var wrap=document.getElementById("pbarWrap");
+  var track=document.getElementById("pbarTrack");
+  var label=document.getElementById("pbarLabel");
+  if(!vis.length){wrap.classList.remove("visible");return;}
+  wrap.classList.add("visible");
+  var html="";
+  for(var i=0;i<vis.length;i++){
+    var cls=i<cur?"done":i===cur?"active":"";
+    html+='<div class="pb-dot '+cls+'">'+(i<cur?"✓":i+1)+"</div>";
+    if(i<vis.length-1)html+='<div class="pb-line '+(i<cur?"done":"")+'"></div>';
+  }
+  track.innerHTML=html;
+  label.innerHTML="<strong>"+(cur+1)+"단계</strong> / "+vis.length+"단계";
+}
+
+function imgHtml(key){
+  var url=IMAGES[key];
+  if(!url||url==="YOUR_IMAGE_URL")
+    return '<div class="step-img"><div class="img-placeholder"><div style="font-size:36px;opacity:0.3">🖼️</div><div style="font-size:12px">'+key+'</div><div style="font-size:11px;margin-top:2px;opacity:0.5">이미지 삽입 예정</div></div></div>';
+  return '<div class="step-img"><img src="'+url+'" alt="'+key+'" loading="lazy"></div>';
+}
+
+function renderStart(root){
+  root.innerHTML='<div class="card"><div class="card-body"><div class="card-title">📦 자재를 수령하셨나요?</div><div class="card-sub">설치에 필요한 자재 박스를 받으셨는지 확인해주세요.</div><div class="btn-row"><button class="btn primary" onclick="chooseRecv(true)">네, 수령했습니다</button><button class="btn full" onclick="chooseRecv(false)">아니요</button></div><div class="notice" id="noticeRecv">자재를 수령하신 후 다시 접속해주세요.<br>문의: <a href="tel:'+TEL+'">'+TEL+'</a></div></div></div><div class="card" id="deviceCard" style="display:none"><div class="card-body"><div class="card-title">🔧 설치할 기기를 선택해주세요</div><div class="card-sub">수령하신 박스에 표기된 기기 종류를 선택해주세요.</div><div class="chip-row"><div class="chip" onclick="chooseDevice(\'hub\')">📡 허브</div><div class="chip" onclick="chooseDevice(\'sensor\')">📟 센서</div><div class="chip" onclick="chooseDevice(\'ctrl\')">🖥️ 컨트롤러</div></div></div></div>';
+}
+function chooseRecv(yes){
+  if(yes){document.getElementById("deviceCard").style.display="block";document.getElementById("noticeRecv").classList.remove("visible");}
+  else{document.getElementById("noticeRecv").classList.add("visible");document.getElementById("deviceCard").style.display="none";}
+}
+function chooseDevice(d){
+  S.device=d;S.flow=[];S.idx=0;
+  if(d==="sensor")S.flow=FLOWS_SENSOR;
+  render();
+}
+
+function renderHubMatSelect(root){
+  // 4차: 어댑터만 바로 시작
+  S.flow=FLOWS_HUB_ADAPTER; S.idx=0; render();
+}
+
+function renderCtrlMat(root){
+  root.innerHTML='<div class="card"><div class="card-body"><div class="card-title">📦 자재를 확인해주세요</div><div class="card-sub">크래들 없이 기기를 에어컨에 바로 부착하는 모델도 있습니다. 화면에서 설치하실 에어컨의 유형을 선택하여 정확한 부착 방법을 확인해 주세요.</div><ul class="cklist"><li onclick="ckToggle(this)"><div class="ck">✓</div>바텀</li><li onclick="ckToggle(this)"><div class="ck">✓</div>3M 테이프</li><li onclick="ckToggle(this)"><div class="ck">✓</div>실리콘</li><li onclick="ckToggle(this)"><div class="ck">✓</div>크래들 (천장형·360 에어컨 해당)</li></ul><div class="btn-row"><button class="btn primary" onclick="startCtrlSelect()">모두 확인했습니다 →</button></div></div></div><div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function startCtrlSelect(){
+  S.flow=[{type:"select_maker_type"}];
+  S.idx=0;render();
+}
+
+function renderChecklist(root,step){
+  var items=step.items.map(function(i){return '<li onclick="ckToggle(this)"><div class="ck">✓</div>'+i+'</li>';}).join("");
+  root.innerHTML='<div class="card"><div class="card-body"><div class="card-title">📦 '+step.title+'</div><div class="card-sub">탭하여 항목을 하나씩 확인해주세요.</div><ul class="cklist">'+items+'</ul><div class="btn-row"><button class="btn primary" onclick="nextStep()">모두 확인했습니다 →</button></div></div></div><div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function ckToggle(li){
+  var ck=li.querySelector(".ck");var on=!ck.classList.contains("on");
+  ck.classList.toggle("on",on);li.classList.toggle("checked",on);
+}
+
+function renderStep(root,step){
+  var tags=(step.opt?'<span class="tag-opt">선택</span>':'')+(step.req?'<span class="tag-req">필수</span>':'');
+  var note=step.note?'<div class="step-note">'+step.note+'</div>':'';
+  var warn2Box=step.warn2?'<div class="warn-note" style="margin-bottom:6px">'+step.warn2+'</div>':'';
+  var warnBox=step.warn?'<div class="danger-note">'+step.warn+'</div>':'';
+  var media=step.img?imgHtml(step.img):'';
+  root.innerHTML='<div class="card"><div class="card-body" style="padding-bottom:1rem"><div class="step-badge">'+step.badge+'</div><div class="step-title">'+step.title+tags+'</div>'+note+warn2Box+warnBox+'</div>'+media+'<div class="confirm-area"><div class="confirm-q">'+step.confirm+'</div><div class="confirm-btns"><button class="cbtn" onclick="toggleHelp()">어려워요 / 문의</button><button class="cbtn yes" onclick="nextStep()">완료했습니다 →</button></div></div></div><div class="help-panel" id="helpPanel">⚠️ 어려우신 경우 고객센터로 연락해주세요.<br>📞 <a href="tel:'+TEL+'">'+TEL+'</a></div><div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function toggleHelp(){document.getElementById("helpPanel").classList.toggle("visible");}
+
+/* ── 실리콘+부착+주의사항 통합 카드 ── */
+function renderWarnAttach(root,step){
+  var badgeNum = S.flow.filter(function(f,i){ return i<=S.idx && f.type!=="select_maker" && f.type!=="select_type"; }).length;
+  root.innerHTML=
+    '<div class="card"><div class="card-body" style="padding-bottom:1rem">'+
+      '<div class="step-badge">'+badgeNum+'단계</div>'+
+      '<div class="step-title">실리콘을 적정량 도포하고 3M 테이프의 보호 필름을 제거한 후, 앞서 테스트했던 위치에 기기를 부착합니다. <span class="tag-req">필수</span></div>'+
+      '<div class="danger-note" style="margin-bottom:6px">⚠️ 실리콘을 도포하지 않거나 과하게 도포할 경우 낙하 위험이 있습니다.</div>'+
+      '<div class="danger-note">⚠️ 기존 자리에 그대로 붙이면 접착력이 약해져 기기가 떨어질 위험이 있기 때문에 부착 위치는 기존 흔적을 피해서 부착해주세요.</div>'+
+    '</div>'+
+    imgHtml(step.silicone)+
+    '<div class="confirm-area">'+
+      '<div class="confirm-q">부착을 완료하셨나요?</div>'+
+      '<div class="confirm-btns"><button class="cbtn" onclick="toggleHelp()">어려워요 / 문의</button><button class="cbtn yes" onclick="nextStep()">완료했습니다 →</button></div>'+
+    '</div></div>'+
+    '<div class="help-panel" id="helpPanel">⚠️ 어려우신 경우 고객센터로 연락해주세요.<br>📞 <a href="tel:'+TEL+'">'+TEL+'</a></div>'+
+    '<div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+
+/* ── 최종 테스트 ── */
+function renderTestFinal(root){
+  var badgeNum = S.flow.filter(function(f,i){ return i<=S.idx && f.type!=="select_maker" && f.type!=="select_type"; }).length;
+  root.innerHTML=
+    '<div class="card"><div class="card-body">'+
+      '<div class="step-badge">'+badgeNum+'단계</div>'+
+      '<div class="card-title" style="font-size:17px;font-weight:700;margin-bottom:4px">앱에서 정상 작동하는지 테스트합니다.</div>'+
+      '<div class="card-sub">아래 항목을 순서대로 확인해주세요. 탭하면 체크됩니다.</div>'+
+      '<div class="test-list">'+
+        '<div class="test-item" onclick="toggleTest(this)"><div class="ck">✓</div> 냉방 24도 ON</div>'+
+        '<div class="test-item" onclick="toggleTest(this)"><div class="ck">✓</div> 송풍 약 ON</div>'+
+        '<div class="test-item" onclick="toggleTest(this)"><div class="ck">✓</div> 난방 24도 ON</div>'+
+        '<div class="test-item" onclick="toggleTest(this)"><div class="ck">✓</div> 전원 OFF</div>'+
+      '</div>'+
+      '<div style="padding:12px 14px;border-radius:var(--radius-sm);background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);font-size:13px;line-height:1.65;margin-bottom:1rem">'+
+        '⚠️ 제어가 안 되는 경우 고객센터로 연락해주세요.<br>📞 <a href="tel:'+TEL+'" style="color:var(--warn-text);font-weight:700;text-decoration:none">'+TEL+'</a>'+
+      '</div>'+
+      '<div class="btn-row"><button class="btn primary" onclick="nextStep()">모두 정상 작동합니다 →</button></div>'+
+    '</div></div>'+
+    '<div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function toggleTest(el){
+  var on=!el.querySelector(".ck").classList.contains("on");
+  el.querySelector(".ck").classList.toggle("on",on);el.classList.toggle("on",on);
+}
+
+function renderSelectMakerType(root){
+  var typeHtml='';
+  if(S.maker){
+    var types=MAKER_TYPES[S.maker]||[];
+    typeHtml='<div class="card-title" style="margin-top:1rem">❄️ 에어컨 형태를 선택해주세요</div><div class="chip-row" id="typeChips3">'+
+      types.map(function(t){return '<div class="chip'+(S.type===t?' sel':'')+'" onclick="inlineType3(\''+t+'\',this)">'+t+'</div>';}).join('')+
+    '</div>';
+  }
+  root.innerHTML=
+    '<div class="card"><div class="card-body">'+
+      '<div class="card-title">🏭 에어컨 제조사를 선택해주세요</div>'+
+      '<div class="chip-row" id="makerChips3">'+
+        ['삼성','LG','캐리어'].map(function(m){return '<div class="chip'+(S.maker===m?' sel':'')+'" onclick="inlineMaker3(\''+m+'\',this)">'+m+'</div>';}).join('')+
+      '</div>'+
+      '<div id="typeSection">'+typeHtml+'</div>'+
+      '<div class="btn-row" style="margin-top:1rem"><button class="btn primary" id="btnMakerType" style="display:'+(S.maker&&S.type?'block':'none')+'" onclick="confirmMakerType()">다음 →</button></div>'+
+    '</div></div>'+
+    '<div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function inlineMaker3(m,el){
+  S.maker=m; S.type='';
+  document.querySelectorAll('#makerChips3 .chip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');
+  var types=MAKER_TYPES[m]||[];
+  document.getElementById('typeSection').innerHTML=
+    '<div class="card-title" style="margin-top:1rem;margin-bottom:.75rem">❄️ 에어컨 형태를 선택해주세요</div>'+
+    '<div class="chip-row" id="typeChips3">'+
+      types.map(function(t){return '<div class="chip" onclick="inlineType3(\''+t+'\',this)">'+t+'</div>';}).join('')+
+    '</div>';
+  document.getElementById('btnMakerType').style.display='none';
+}
+function inlineType3(t,el){
+  S.type=t;
+  document.querySelectorAll('#typeChips3 .chip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');
+  document.getElementById('btnMakerType').style.display='block';
+}
+function confirmMakerType(){
+  var installSteps=buildCtrlFlow(S.maker,S.type).slice(3);
+  S.flow=installSteps; S.idx=0; render();
+}
+
+function renderSelectMaker(root){
+  var chips=["삼성","LG","캐리어"].map(function(m){return '<div class="chip'+(S.maker===m?" sel":"")+'" onclick="inlineMaker(\''+m+'\',this)">'+m+'</div>';}).join("");
+  root.innerHTML='<div class="card"><div class="card-body"><div class="card-title">🏭 에어컨 제조사를 선택해주세요</div><div class="chip-row" id="makerChips2">'+chips+'</div><div class="btn-row"><button class="btn primary" id="btnM2" style="display:'+(S.maker?"block":"none")+'" onclick="nextStep()">다음 →</button></div></div></div><div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function inlineMaker(m,el){
+  S.maker=m;
+  document.querySelectorAll("#makerChips2 .chip").forEach(function(c){c.classList.remove("sel");});
+  el.classList.add("sel");document.getElementById("btnM2").style.display="block";
+}
+
+function renderSelectType(root){
+  var types=MAKER_TYPES[S.maker]||[];
+  var chips=types.map(function(t){return '<div class="chip'+(S.type===t?" sel":"")+'" onclick="inlineType(\''+t+'\',this)">'+t+'</div>';}).join("");
+  root.innerHTML='<div class="card"><div class="card-body"><div class="card-title">❄️ 에어컨 형태를 선택해주세요</div><div class="chip-row" id="typeChips2">'+chips+'</div><div class="btn-row"><button class="btn primary" id="btnT2" style="display:'+(S.type?"block":"none")+'" onclick="confirmType()">다음 →</button></div></div></div><div class="back-row"><button class="back-btn" onclick="goBack()">← 이전</button></div>';
+}
+function inlineType(t,el){
+  S.type=t;
+  document.querySelectorAll("#typeChips2 .chip").forEach(function(c){c.classList.remove("sel");});
+  el.classList.add("sel");document.getElementById("btnT2").style.display="block";
+}
+function confirmType(){
+  var installSteps=buildCtrlFlow(S.maker,S.type).slice(3);
+  S.flow=installSteps;S.idx=0;render();
+}
+
+function renderDone(root){
+  updatePbar([],-1);
+  root.innerHTML='<div class="done-card"><div class="done-icon">✅</div><h2>설치 완료!</h2><p>안내에 따라 주셔서 감사합니다.<br>추가 문의 사항이 있으실 경우 고객센터 <a href="tel:'+TEL+'" style="color:var(--blue);font-weight:700;text-decoration:none">'+TEL+'</a>로 문의해 주시면 신속하게 안내해 드리겠습니다.</p><button class="btn primary" onclick="resetAll()" style="max-width:200px;margin:0 auto;display:block">처음부터 다시</button></div>';
+}
+
+function nextStep(){S.idx++;render();window.scrollTo({top:0,behavior:"smooth"});}
+function goBack(){
+  if(S.idx>0){S.idx--;render();}
+  else if(S.device==="hub"){S.flow=[];S.idx=0;render();}
+  else if(S.device==="ctrl"){S.flow=[];S.idx=0;render();}
+  else{S.device="";S.flow=[];S.idx=0;render();}
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function resetAll(){S={device:"",maker:"",type:"",hubMat:"",flow:[],idx:0};render();window.scrollTo({top:0,behavior:"smooth"});}
+
+render();
+</script>
+</body>
+</html>
